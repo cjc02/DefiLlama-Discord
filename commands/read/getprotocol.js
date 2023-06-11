@@ -60,32 +60,6 @@ module.exports = {
 			// TODO: error
 			await interaction.reply('Failed');
 		}
-
-		// {
-		// 	category: 'CDP',
-		// 	chains: [ 'Ethereum' ],
-		// 	oracles: [ 'Chronicle' ],
-		// 	mcap: 535965555.2277959,
-		// 	name: 'MakerDAO',
-		// 	symbol: 'MKR',
-		// 	logo: 'https://icons.llama.fi/makerdao.jpg',
-		// 	url: 'https://makerdao.com/',
-		// 	referralUrl: 'https://oasis.app/?ref=0x08a3c2A819E3de7ACa384c798269B3Ce1CD0e437',
-		// 	tvl: 5815740796.098475,
-		// 	tvlPrevDay: 5815178719.530809,
-		// 	tvlPrevWeek: 6363877155.606131,
-		// 	tvlPrevMonth: 6964847973.425394,
-		// 	chainTvls: {
-		// 	  Ethereum: {
-		// 		tvl: 5815740796.098475,
-		// 		tvlPrevDay: 5815178719.530809,
-		// 		tvlPrevWeek: 6363877155.606131,
-		// 		tvlPrevMonth: 6964847973.425394
-		// 	  }
-		// 	},
-		// 	defillamaId: '118'
-		//   }
-		// TODO: Get protocol data and parse it
 	},
 	async autocomplete(interaction) {
 		const focusedValue = interaction.options.getFocused().toLowerCase();
