@@ -1,12 +1,16 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const QuickChart = require('quickchart-js');
 const { getProtocols, getProtocol } = require('../../protocols');
 
-function formatTVL(num) {
+const axios = require('axios');
+
+function formatTVL(num, compact = false) {
 	const formatter = Intl.NumberFormat('en-US', {
 		style: 'currency',
 		currency: 'USD',
-		notation: 'compact',
-		maximumFractionDigits: 0,
+		notation: compact ? 'compact' : 'standard',
+		// notation: 'compact',
+		// maximumFractionDigits: 0,
 	});
 
 	return formatter.format(num);
@@ -24,6 +28,65 @@ function getTVLs(protocolData) {
 	return data;
 }
 
+// Thanks https://quickchart.io/documentation/send-charts-discord-bot/
+async function buildTVLChart(protocolName) {
+	async function getHistoricalTVL() {
+		try {
+			const response = await axios.get(`https://api.llama.fi/protocol/${protocolName}`);
+			const tvlData = response.data['tvl'];
+			const result = tvlData.map(point => {
+				return {
+					label: new Date(point['date'] * 1000).toISOString().split('T')[0],
+					data: point['totalLiquidityUSD'],
+				};
+			});
+			return result;
+		}
+		catch (error) {
+			console.error(error);
+		}
+	}
+	const result = await getHistoricalTVL(protocolName);
+	// We have to only display the last 243 datapoints due to QuickChart limitations
+	const labels = result.map(item => item.label).slice(-243);
+	const data = result.map(item => item.data).slice(-243);
+
+	const chart = new QuickChart();
+	const chartConfig = {
+		type: 'line',
+		data: {
+			labels: labels,
+			datasets: [{
+				label: 'TVL for ' + protocolName,
+				data: data,
+				borderColor: 'rgba(75, 192, 192, 1)',
+				fill: false,
+			}],
+		},
+		options: {
+			scales: {
+				x: {
+					type: 'time',
+					time: {
+						unit: 'day',
+					},
+				},
+				yAxes: [{
+					ticks: {
+						callback: (val) => {
+							return '$' + val.toLocaleString({ style:'currency', currency:'USD', notation: 'compact' });
+						},
+					},
+				}],
+
+			},
+		},
+	};
+	chart.setConfig(chartConfig);
+	const url = await chart.getShortUrl();
+	return url;
+}
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('getprotocol')
@@ -32,9 +95,14 @@ module.exports = {
 			option.setName('protocol')
 				.setRequired(true)
 				.setDescription('The protocol you want information on')
-				.setAutocomplete(true)),
+				.setAutocomplete(true))
+		.addBooleanOption(option =>
+			option.setName('includechart')
+				.setDescription('Include a historical chart of TVL. Included by default')),
+
 	async execute(interaction) {
 		const protocolName = interaction.options.getString('protocol');
+		const includeChart = interaction.options.getBoolean('includechart');
 		const [protocolData, protocolParent] = getProtocol(protocolName);
 
 		// TODO: Add checks to ensure data exists
@@ -46,13 +114,17 @@ module.exports = {
 				.setURL(protocolData.url)
 				.addFields(
 					{ name: 'Category', value: protocolData.category },
-					{ name: 'Total Value Locked', value: formatTVL(protocolData.tvl) },
+					{ name: 'Total Value Locked', value: formatTVL(protocolData.tvl, true) },
 					...getTVLs(protocolData),
 				)
 				.setThumbnail(protocolData.logo);
-			if (protocolParent) {
 
-				embed.setDescription(protocolParent.description);
+			if (protocolParent) {embed.setDescription(protocolParent.description);}
+
+			if (includeChart) {
+				const chartUrl = await buildTVLChart(protocolName);
+				console.log(chartUrl);
+				embed.setImage(chartUrl);
 			}
 			await interaction.reply({ embeds: [embed] });
 		}
