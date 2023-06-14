@@ -65,29 +65,49 @@ async function getChainFields(rawChainsData, limit = 10, ordered = 'ascending', 
 	// Lastly we process the data into a charturl
 	const data = rawChainsData.map(chain => chain.tvl);
 	const labels = rawChainsData.map(chain => chain.name);
-	const backgroundColor = rawChainsData.map(() => '#' + Math.floor(Math.random() * 16777215).toString(16));
 
 	const chart = new QuickChart();
 	chart.setConfig({
-		'type': 'outlabeledPie',
-		'data': {
-			'labels': labels,
-			'datasets': [{
-				'backgroundColor': backgroundColor,
-				'data': data,
+		type: 'bar',
+		data: {
+			labels: labels,
+			datasets: [{
+				label: 'Chain TVLs',
+				data: data,
+				backgroundColor: 'rgba(54, 162, 235, 0.5)',
+				borderColor: 'rgb(54, 162, 235)',
+				borderWidth: 1,
 			}],
 		},
-		'options': {
-			'plugins': {
-				'legend': false,
-				'outlabels': {
-					'text': '%l %p',
-					'color': 'black',
-					'stretch': 35,
-					'font': {
-						'resizable': true,
-						'minSize': 12,
-						'maxSize': 18,
+		options: {
+			plugins: {
+				// Disable the legend
+				legend: { display: false },
+
+				// Add a title
+				title: {
+					display: true,
+					text: 'Chain TVLs',
+				},
+				datalabels: {
+					anchor: 'end',
+					align: 'top',
+					color: '#fff',
+					backgroundColor: 'rgba(34, 139, 34, 0.6)',
+					borderColor: 'rgba(34, 139, 34, 1.0)',
+					borderWidth: 1,
+					borderRadius: 5,
+					formatter: (value) => {
+						return value.toLocaleString('en-US', { style:'currency', currency:'USD', notation: 'compact' });
+					},
+				},
+			},
+			scales: {
+				y: {
+					ticks: {
+						callback: function(value) {
+							return value.toLocaleString('en-US', { style:'currency', currency:'USD', notation: 'compact' });
+						},
 					},
 				},
 			},
@@ -96,6 +116,7 @@ async function getChainFields(rawChainsData, limit = 10, ordered = 'ascending', 
 
 	// Generates short url using QuickChart for usage in discord
 	const chartURL = await chart.getShortUrl();
+	console.log(chartURL);
 
 	return [fields, chartURL];
 }
