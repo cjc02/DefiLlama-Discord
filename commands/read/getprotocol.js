@@ -1,19 +1,9 @@
 // TODO: Clean up code
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getProtocols, getProtocol } = require('../../protocols');
+const { formatTVL } = require('../../utils');
 const QuickChart = require('quickchart-js');
 const axios = require('axios');
-
-// Converts to US Dollar
-function formatTVL(num, compact = false) {
-	const formatter = Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency: 'USD',
-		notation: compact ? 'compact' : 'standard',
-	});
-
-	return formatter.format(num);
-}
 
 // Gets all chain TVLs and returns in format for discord inline fields for embeds.
 function getTVLs(protocolData) {
