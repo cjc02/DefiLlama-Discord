@@ -1,9 +1,12 @@
-const { SlashCommandBuilder } = require('discord.js');
+// TODO: Add charts
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { formatTVL } = require('../../utils');
+const QuickChart = require('quickchart-js');
+const axios = require('axios');
 
 // Sort chain data, set limit of chains returned, ascending or descending, and range of TVLs
 // Returns in-line fields for usage in Discord.js
-function getChainsData(rawChainsData, limit = 10, ordered = 'ascending', minTVL, maxTVL) {
+async function getChainFields(rawChainsData, limit = 10, ordered = 'ascending', minTVL, maxTVL) {
 
 	// Understands values like "1K", "1M", "1B"
 	function parseTVL(str) {
@@ -16,6 +19,8 @@ function getChainsData(rawChainsData, limit = 10, ordered = 'ascending', minTVL,
 			return num * 1e6;
 		case 'B':
 			return num * 1e9;
+		case 'T':
+			return num * 1e12;
 		default:
 			return num;
 		}
@@ -57,7 +62,42 @@ function getChainsData(rawChainsData, limit = 10, ordered = 'ascending', minTVL,
 		fields.push(field);
 	}
 
-	return fields;
+	// Lastly we process the data into a charturl
+	const data = rawChainsData.map(chain => chain.tvl);
+	const labels = rawChainsData.map(chain => chain.name);
+	const backgroundColor = rawChainsData.map(() => '#' + Math.floor(Math.random() * 16777215).toString(16));
+
+	const chart = new QuickChart();
+	chart.setConfig({
+		'type': 'outlabeledPie',
+		'data': {
+			'labels': labels,
+			'datasets': [{
+				'backgroundColor': backgroundColor,
+				'data': data,
+			}],
+		},
+		'options': {
+			'plugins': {
+				'legend': false,
+				'outlabels': {
+					'text': '%l %p',
+					'color': 'black',
+					'stretch': 35,
+					'font': {
+						'resizable': true,
+						'minSize': 12,
+						'maxSize': 18,
+					},
+				},
+			},
+		},
+	});
+
+	// Generates short url using QuickChart for usage in discord
+	const chartURL = await chart.getShortUrl();
+
+	return [fields, chartURL];
 }
 
 
@@ -76,8 +116,36 @@ module.exports = {
 				.addChoices({ name: 'Highest to lowest', value: 'ascending' }, { name: 'Lowest to highest', value: 'descending' }))
 		.addStringOption(option =>
 			option.setName('mintvl')
-				.setDescription('Filter out any chains with lower TVL')),
+				.setDescription('Filter out any chains with a lower TVL than the given value'),
+		)
+		.addStringOption(option =>
+			option.setName('maxtvl')
+				.setDescription('Filter out any chains with a higher TVL than the given value'))
+		.addBooleanOption(option =>
+			option.setName('includechart').setDescription('Includes a pie chart visualizing the data')),
 	async execute(interaction) {
-		await interaction.reply('Pong!');
+		// By default gives 10 chains sorted by highest to lowest from 10 trillion TVL to 0 TVL
+		const limit = interaction.options.getNumber('limit') ?? 10;
+		const order = interaction.options.getString('order') ?? 'descending';
+		const mintvl = interaction.options.getString('mintvl') ?? '0';
+		const maxtvl = interaction.options.getString('maxtvl') ?? '100T';
+		const includeChart = interaction.options.getBoolean('includechart') ?? false;
+
+		const response = await axios.get('https://api.llama.fi/v2/chains');
+		const [fields, chartURL] = await getChainFields(response.data, limit, order, mintvl, maxtvl);
+
+		// TODO: Error handling incase of no chains found
+		const embed = new EmbedBuilder()
+			.setColor(0x0099FF)
+			.setTitle('Chains TVL')
+			.addFields(
+				...fields,
+			);
+
+		// Add a chart to embed visualizing chain data
+		if (includeChart) {
+			embed.setImage(chartURL);
+		}
+		await interaction.reply({ embeds: [embed] });
 	},
 };
