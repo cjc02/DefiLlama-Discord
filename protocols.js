@@ -1,8 +1,9 @@
 const fs = require('fs');
 const axios = require('axios');
 
+const filename = './data.json';
 let protocols = [];
-let pools = [];
+let pools = {};
 
 function getProtocols() {
 	return protocols;
@@ -14,7 +15,7 @@ function getPools() {
 
 function getProtocol(protocolName) {
 	try {
-		const data = fs.readFileSync('./protocols.json', 'utf8');
+		const data = fs.readFileSync(filename, 'utf8');
 		const protocolJSON = JSON.parse(data);
 		let protocolData, protocolParent;
 
@@ -23,7 +24,7 @@ function getProtocol(protocolName) {
 				protocolData = protocol;
 				// If there is a protocol parent that exists, we want to return it.
 				if (protocolData.parentProtocol) {
-					for (const parentProtocol of protocolJSON.parentProtocols) {
+					for (const parentProtocol of protocolJSON.protocols.parentProtocols) {
 						if (parentProtocol.id === protocolData.parentProtocol) {
 							protocolParent = parentProtocol;
 						}
@@ -45,39 +46,47 @@ function getProtocol(protocolName) {
 
 function getPool(poolId) {
 	try {
-		const data = fs.readFileSync('./data.json', 'utf8');
-		const JSONData = JSON.parse(data);
-		let poolData;
-
-		for (const pool of JSONData.pools) {
-			if (pool.id === poolId) {
-				poolData = pool;
-				return poolData;
-			}
+		// Check if the pool data is available in the pool map
+		if (pools[poolId]) {
+			return pools[poolId];
 		}
 
-		return poolData;
+		return null;
 	}
 	catch (err) {
-		console.error(`Error reading file from disk: ${err}`);
+		console.error(`Error retrieving pool: ${err}`);
 	}
+}
+
+function getPoolIDBySymbol(key) {
+	const pool = pools[key];
+	return pool ? pool.pool : null;
 }
 
 function updateKeys() {
-	const JSONData = JSON.parse(fs.readFileSync('./data.json', 'utf8'));
-	protocols = JSONData.protocols.map(protocol => protocol.name);
-	pools = JSONData.pools.map(pool => pool.id);
+	const JSONData = JSON.parse(fs.readFileSync(filename, 'utf8'));
+	protocols = JSONData.protocols.protocols.map(protocol => protocol.name);
+	pools = {};
+	JSONData.pools.data.forEach(pool => {
+		const key = `${pool.symbol} (${pool.project})`;
+		pools[key] = pool;
+		pools[pool.pool] = pool;
+	});
 }
 
+// Gets protocols & pools data to be used for autocomplete
 async function syncData() {
 	try {
-		const protocolsResponse = await axios.get('https://api.llama.fi/lite/protocols2');
-		const poolsResponse = await axios.get('https://yields.llama.fi/pools');
+		const [protocolsResponse, poolsResponse] = await Promise.all([
+			axios.get('https://api.llama.fi/lite/protocols2'),
+			axios.get('https://yields.llama.fi/pools'),
+		]);
 
-		fs.writeFileSync('./data.json', JSON.stringify({
+		fs.writeFileSync(filename, JSON.stringify({
 			protocols: protocolsResponse.data,
 			pools: poolsResponse.data,
 		}));
+
 		updateKeys();
 		console.log('protocols:', protocols);
 		console.log('pools:', pools);
@@ -90,10 +99,11 @@ async function syncData() {
 }
 
 module.exports = {
+	syncData,
 	updateKeys,
 	getProtocol,
 	getPool,
-	syncData,
 	getProtocols,
 	getPools,
+	getPoolIDBySymbol,
 };
