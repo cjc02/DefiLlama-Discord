@@ -2,9 +2,14 @@ const fs = require('fs');
 const axios = require('axios');
 
 let protocols = [];
+let pools = [];
 
 function getProtocols() {
 	return protocols;
+}
+
+function getPools() {
+	return pools;
 }
 
 function getProtocol(protocolName) {
@@ -38,20 +43,44 @@ function getProtocol(protocolName) {
 	}
 }
 
-// Dev function, just so we don't have to make unnecessary API calls
-function updateKeys() {
-	const protocolsJSON = JSON.parse(fs.readFileSync('./protocols.json', 'utf8'));
-	protocols = protocolsJSON.protocols.map(protocol => protocol.name);
+function getPool(poolId) {
+	try {
+		const data = fs.readFileSync('./data.json', 'utf8');
+		const JSONData = JSON.parse(data);
+		let poolData;
+
+		for (const pool of JSONData.pools) {
+			if (pool.id === poolId) {
+				poolData = pool;
+				return poolData;
+			}
+		}
+
+		return poolData;
+	}
+	catch (err) {
+		console.error(`Error reading file from disk: ${err}`);
+	}
 }
 
-// Updates the list of protocols
-async function syncProtocols() {
+function updateKeys() {
+	const JSONData = JSON.parse(fs.readFileSync('./data.json', 'utf8'));
+	protocols = JSONData.protocols.map(protocol => protocol.name);
+	pools = JSONData.pools.map(pool => pool.id);
+}
+
+async function syncData() {
 	try {
-		const response = await axios.get('https://api.llama.fi/lite/protocols2');
-		fs.writeFileSync('./protocols.json', JSON.stringify(response.data));
-		// protocols = response.data.protocols.map(protocol => protocol.name);
+		const protocolsResponse = await axios.get('https://api.llama.fi/lite/protocols2');
+		const poolsResponse = await axios.get('https://yields.llama.fi/pools');
+
+		fs.writeFileSync('./data.json', JSON.stringify({
+			protocols: protocolsResponse.data,
+			pools: poolsResponse.data,
+		}));
 		updateKeys();
-		console.log(protocols);
+		console.log('protocols:', protocols);
+		console.log('pools:', pools);
 	}
 	catch (error) {
 		console.error(error);
@@ -63,6 +92,8 @@ async function syncProtocols() {
 module.exports = {
 	updateKeys,
 	getProtocol,
-	syncProtocols,
+	getPool,
+	syncData,
 	getProtocols,
+	getPools,
 };
