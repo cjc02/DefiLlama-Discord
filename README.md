@@ -19,10 +19,16 @@ Get information about TVL by chain.
 - `maxtvl`: Sort the chains by maximum TVL. Accepts the same notation as `mintvl`.
 - `includechart`: Optional. Include a bar chart visualizing the data by writing `true` in this argument.
 
+### `/getpool [pool] (includechart)`
+Get current and or historical APY and TVL of a pool. 
+
+- `pool`: The pool symbol you want APY/TVL on.
+- `includechart`: Include a historical chart of TVL and APY by writing `true` in this argument.
+
 ### `/syncprotocols`
 Retrieve and update all protocols that DefiLlama has for the autocomplete & protocol retrieval functionality.
 
 ## Features
 
 ### Autocomplete Arguments
-Autocompletes strings in `protocol` arguments by using a list of known protocols. The bot stores a local list for this purpose, which can be updated with the `/syncprotocols` command.
+Autocompletes strings in `protocol` and `pool` arguments by using a list of known protocols and pools. The bot stores a local list for this purpose, which can be updated with the `/syncprotocols` command.
