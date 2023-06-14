@@ -33,12 +33,14 @@ async function buildTVLAPYChart(rawHistoricalData) {
 					data: tvlData,
 					borderColor: 'rgba(75, 192, 192, 1)',
 					fill: false,
+					yAxisID: 'tvl',
 				},
 				{
 					label: 'APY',
 					data: apyData,
 					borderColor: 'rgba(255, 99, 132, 1)',
 					fill: false,
+					yAxisID: 'apy',
 				},
 			],
 		},
@@ -50,13 +52,30 @@ async function buildTVLAPYChart(rawHistoricalData) {
 						unit: 'day',
 					},
 				},
-				yAxes: [{
-					ticks: {
-						callback: (val) => {
-							return '$' + val.toLocaleString({ style:'currency', currency:'USD', notation: 'compact' });
+				yAxes: [
+					{
+						id: 'tvl',
+						type: 'linear',
+						position: 'left',
+						ticks: {
+							callback: (val) => {
+								return '$' + val.toLocaleString({ style:'currency', currency:'USD', notation: 'compact' });
+							},
 						},
 					},
-				}],
+					{
+						id: 'apy',
+						type: 'linear',
+						position: 'right',
+						ticks: {
+							callback: (val) => {
+								return val + '%';
+							},
+						},
+						// Ensure this axis starts from 0
+						beginAtZero: true,
+					},
+				],
 			},
 		},
 	});
@@ -97,12 +116,21 @@ module.exports = {
 					{ name: 'Annual Percentage Yield', value: `${poolData.apy}` },
 				);
 
-			if (poolData.apyPct1D !== 0 && poolData.apyPct7D !== 0 && poolData.apyPct30D !== 0) {
-				embed.addFields(
-					{ name: 'APY % 1D', value: `${poolData.apyPct1D}`, inline: true },
-					{ name: 'APY % 7D', value: `${poolData.apyPct7D}`, inline: true },
-					{ name: 'APY % 30D', value: `${poolData.apyPct30D}`, inline: true },
-				);
+			const fields = [];
+			if (poolData.apyPct1D !== null) {
+				fields.push({ name: 'APY % 1D', value: `${poolData.apyPct1D}`, inline: true });
+			}
+
+			if (poolData.apyPct7D !== null) {
+				fields.push({ name: 'APY % 7D', value: `${poolData.apyPct7D}`, inline: true });
+			}
+
+			if (poolData.apyPct30D !== null) {
+				fields.push({ name: 'APY % 30D', value: `${poolData.apyPct30D}`, inline: true });
+			}
+
+			if (fields.length > 0) {
+				embed.addFields(fields);
 			}
 
 			if (includeChart) {
