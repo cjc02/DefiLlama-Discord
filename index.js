@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const { updateKeys } = require('./protocols');
+const { syncData, updateKeys } = require('./protocols');
 // const { syncProtocols } = require('./protocols');
 require('dotenv').config();
 
@@ -11,6 +11,12 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
+
+(async function() {
+	console.log('Syncing data..');
+	// await syncData();
+	console.log('Data synced..');
+})();
 
 // Load commands?
 for (const folder of commandFolders) {
@@ -32,9 +38,7 @@ for (const folder of commandFolders) {
 client.once(Events.ClientReady, () => {
 
 	// TODO: We want to load all available protocols every time the bot starts.
-	// await syncProtocols
 	updateKeys();
-
 	console.log('Ready!');
 });
 
