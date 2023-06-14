@@ -16,13 +16,14 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	// If minTVL is given, remove any chains lower than minimum
 	if (minTVL) {
 		const minTVLNum = parseTVL(minTVL);
-		rawPoolsData = rawPoolsData.filter(chain => chain.tvl >= minTVLNum);
+		rawPoolsData = rawPoolsData.filter(chain => chain.tvlUsd >= minTVLNum);
+		console.log(rawPoolsData);
 	}
 
 	// If maxTVL is given, remove any chains higher than maximum
 	if (maxTVL) {
 		const maxTVLNum = parseTVL(maxTVL);
-		rawPoolsData = rawPoolsData.filter(chain => chain.tvl <= maxTVLNum);
+		rawPoolsData = rawPoolsData.filter(chain => chain.tvlUsd <= maxTVLNum);
 	}
 
 	// If minAPY is given, remove any pools lower than minimum
@@ -49,15 +50,16 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	// Finally, format the remaining data into discord.js fields
 	const fields = [];
 	for (const pool of rawPoolsData) {
-		const name = pool.name;
-		const tvl = pool.tvl;
-		const field = { name: name, value: formatTVL(tvl, true), inline: true };
+		const symbol = pool.symbol;
+		const tvl = formatTVL(pool.tvlUsd, true);
+		const apy = pool.apy;
+		const field = { name: symbol, value: `TVL: ${tvl} APY: ${apy}%`, inline: true };
 		fields.push(field);
 	}
 
 	// Lastly we process the data into a charturl
-	const data = rawPoolsData.map(pool => pool.tvl);
-	const labels = rawPoolsData.map(pool => pool.name);
+	const data = rawPoolsData.map(pool => pool.tvlUsd);
+	const labels = rawPoolsData.map(pool => pool.symbol);
 
 	const chart = new QuickChart();
 	chart.setConfig({
@@ -111,7 +113,7 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	const chartURL = await chart.getShortUrl();
 	console.log(chartURL);
 
-
+	console.log(fields);
 	return [fields, chartURL];
 }
 
@@ -152,7 +154,7 @@ module.exports = {
 		const includeChart = interaction.options.getBoolean('includechart') ?? false;
 
 		const response = await axios.get('https://yields.llama.fi/pools');
-		const [fields, chartURL] = await getPoolFields(response.data, limit, order, mintvl, maxtvl, minapy, maxapy);
+		const [fields, chartURL] = await getPoolFields(response.data.data, limit, order, mintvl, maxtvl, minapy, maxapy);
 
 		const embed = new EmbedBuilder()
 			.setColor(0x0099FF)
