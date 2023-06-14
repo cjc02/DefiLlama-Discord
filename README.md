@@ -7,4 +7,4 @@
 - Retrieves and updates all protocols DefiLlama has, for the autocomplete & protocol retrieval.
 
 ## Autocomplete arguments
-- On start we retrieve the current list of all protocols supported by DefiLlama in order for autocomplete on discord to work.
+- Autocompletes strings in `protocol` arguments by using a list of known protocols (through storing a local list) 
