@@ -1,6 +1,7 @@
 // Get pools ordered by chain, tvl and apy
 // /getpools (chain) (mintvl) (maxtvl) (minapy) (maxapy)
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+// TODO: Fix charts (include tvl and apy), fix sorting highest to lowest
+const { SlashCommandBuilder, EmbedBuilder, bold } = require('discord.js');
 const { formatTVL, parseTVL } = require('../../utils');
 const QuickChart = require('quickchart-js');
 const axios = require('axios');
@@ -37,13 +38,18 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	}
 
 	// Sort APY from lowest to highest or highest to lowest
-	if (ordered == 'ascending') {
+	if (ordered == 'ascendingapy') {
 		rawPoolsData = rawPoolsData.sort((a, b) => a.apy - b.apy);
 	}
-	else if (ordered == 'descending') {
+	else if (ordered == 'descendingapy') {
 		rawPoolsData = rawPoolsData.sort((a, b) => b.apy - a.apy);
 	}
-
+	else if (ordered == 'ascendingtvl') {
+		rawPoolsData = rawPoolsData.sort((a, b) => a.tvlUsd - b.tvlUsd);
+	}
+	else if (ordered == 'descendingtvl') {
+		rawPoolsData = rawPoolsData.sort((a, b) => b.tvlUsd - a.tvlUsd);
+	}
 	// Limit amount of pools we want
 	rawPoolsData = rawPoolsData.slice(0, limit);
 
@@ -51,9 +57,14 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	const fields = [];
 	for (const pool of rawPoolsData) {
 		const symbol = pool.symbol;
+		const project = pool.project;
+		const name = `${bold(symbol)} (${project})`;
+
 		const tvl = formatTVL(pool.tvlUsd, true);
 		const apy = pool.apy;
-		const field = { name: symbol, value: `TVL: ${tvl} APY: ${apy}%`, inline: true };
+		const tvlapy = `TVL: ${bold(tvl)} APY: ${bold(apy + '%')}`;
+
+		const field = { name: name, value: tvlapy, inline: true };
 		fields.push(field);
 	}
 
@@ -93,7 +104,7 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 					borderWidth: 1,
 					borderRadius: 5,
 					formatter: (value) => {
-						return value.toLocaleString('en-US', { style:'currency', currency:'USD', notation: 'compact' });
+						return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', notation: 'compact' });
 					},
 				},
 			},
@@ -101,7 +112,7 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 				y: {
 					ticks: {
 						callback: function(value) {
-							return value.toLocaleString('en-US', { style:'currency', currency:'USD', notation: 'compact' });
+							return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', notation: 'compact' });
 						},
 					},
 				},
@@ -128,8 +139,12 @@ module.exports = {
 				.setMaxValue(25))
 		.addStringOption(option =>
 			option.setName('order')
-				.setDescription('Sort APY by highest to lowest or lowest to highest')
-				.addChoices({ name: 'Highest to lowest', value: 'ascending' }, { name: 'Lowest to highest', value: 'descending' }))
+				.setDescription('Sort APY by highest to lowest apy/tvl and vice versa')
+				.addChoices(
+					{ name: 'Highest to lowest APY', value: 'ascendingapy' },
+					{ name: 'Highest to lowest TVL', value: 'ascendingtvl' },
+					{ name: 'Lowest to highest APY', value: 'descendingapy' },
+					{ name: 'Lowest to highest TVL', value: 'descendingtvl' }))
 		.addStringOption(option =>
 			option.setName('mintvl')
 				.setDescription('Filter out any pools with a lower TVL than the given value'))
