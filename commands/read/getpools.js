@@ -1,7 +1,4 @@
 // Get pools ordered by chain, tvl and apy
-// /getpools (chain) (mintvl) (maxtvl) (minapy) (maxapy)
-// TODO: Fix charts (include tvl and apy), fix sorting highest to lowest
-// TODO: Sort by chain
 const { SlashCommandBuilder, EmbedBuilder, bold } = require('discord.js');
 const { formatTVL, parseTVL } = require('../../utils');
 const QuickChart = require('quickchart-js');
@@ -9,23 +6,27 @@ const axios = require('axios');
 
 // Sort pool data, set limit of pools returned, and range of TVLs
 // Returns in-line fields for usage in Discord.js
-async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', minTVL, maxTVL, minAPY, maxAPY) {
+async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', minTVL, maxTVL, minAPY, maxAPY, chain) {
 
 	if (limit > 25 || limit < 1) {
 		return 'cannot return more than 25 pools or less than 1';
 	}
 
+	// If chain is given, filter out all other chains
+	if (chain) {
+		rawPoolsData = rawPoolsData.filter(pool => pool.chain.toLowerCase() === chain.toLowerCase());
+	}
+
 	// If minTVL is given, remove any chains lower than minimum
 	if (minTVL) {
 		const minTVLNum = parseTVL(minTVL);
-		rawPoolsData = rawPoolsData.filter(chain => chain.tvlUsd >= minTVLNum);
-		console.log(rawPoolsData);
+		rawPoolsData = rawPoolsData.filter(pool => pool.tvlUsd >= minTVLNum);
 	}
 
 	// If maxTVL is given, remove any chains higher than maximum
 	if (maxTVL) {
 		const maxTVLNum = parseTVL(maxTVL);
-		rawPoolsData = rawPoolsData.filter(chain => chain.tvlUsd <= maxTVLNum);
+		rawPoolsData = rawPoolsData.filter(pool => pool.tvlUsd <= maxTVLNum);
 	}
 
 	// If minAPY is given, remove any pools lower than minimum
@@ -51,6 +52,7 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	else if (ordered == 'descendingtvl') {
 		rawPoolsData = rawPoolsData.sort((a, b) => b.tvlUsd - a.tvlUsd);
 	}
+
 	// Limit amount of pools we want
 	rawPoolsData = rawPoolsData.slice(0, limit);
 
@@ -176,6 +178,9 @@ module.exports = {
 		.addNumberOption(option =>
 			option.setName('maxapy')
 				.setDescription('Filter out any pools with a higher APY than the given value'))
+		.addStringOption(option =>
+			option.setName('chain')
+				.setDescription('Filter by chain name'))
 		.addBooleanOption(option =>
 			option.setName('includechart').setDescription('Includes a pie chart visualizing the data')),
 	async execute(interaction) {
@@ -185,10 +190,11 @@ module.exports = {
 		const maxtvl = interaction.options.getString('maxtvl') ?? '100T';
 		const minapy = interaction.options.getNumber('minapy') ?? 0;
 		const maxapy = interaction.options.getNumber('maxapy') ?? Infinity;
+		const chain = interaction.options.getString('chain') ?? null;
 		const includeChart = interaction.options.getBoolean('includechart') ?? false;
 
 		const response = await axios.get('https://yields.llama.fi/pools');
-		const [fields, chartURL] = await getPoolFields(response.data.data, limit, order, mintvl, maxtvl, minapy, maxapy);
+		const [fields, chartURL] = await getPoolFields(response.data.data, limit, order, mintvl, maxtvl, minapy, maxapy, chain);
 
 		const embed = new EmbedBuilder()
 			.setColor(0x0099FF)
