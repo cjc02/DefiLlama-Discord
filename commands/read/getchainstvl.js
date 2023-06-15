@@ -1,6 +1,6 @@
 // TODO: Add charts
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { formatTVL } = require('../../utils');
+const { formatTVL, parseTVL } = require('../../utils');
 const QuickChart = require('quickchart-js');
 const axios = require('axios');
 

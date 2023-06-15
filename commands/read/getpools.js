@@ -1,6 +1,7 @@
 // Get pools ordered by chain, tvl and apy
 // /getpools (chain) (mintvl) (maxtvl) (minapy) (maxapy)
 // TODO: Fix charts (include tvl and apy), fix sorting highest to lowest
+// TODO: Sort by chain
 const { SlashCommandBuilder, EmbedBuilder, bold } = require('discord.js');
 const { formatTVL, parseTVL } = require('../../utils');
 const QuickChart = require('quickchart-js');
@@ -69,53 +70,72 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	}
 
 	// Lastly we process the data into a charturl
-	const data = rawPoolsData.map(pool => pool.tvlUsd);
-	const labels = rawPoolsData.map(pool => pool.symbol);
+	const tvlData = rawPoolsData.map(pool => pool.tvlUsd);
+	const apyData = rawPoolsData.map(pool => pool.apy);
+	const labels = rawPoolsData.map(pool => {
+		const label = pool.symbol;
+		// Truncate labels more than 10 characters to not mess up the charts
+		if (pool.symbol.length > 10) {
+			return label.substring(0, 4) + '..' + label.substring(label.length - 4);
+		}
+		return label;
+	});
 
 	const chart = new QuickChart();
 	chart.setConfig({
 		type: 'bar',
 		data: {
 			labels: labels,
-			datasets: [{
-				label: 'Pool TVLs',
-				data: data,
-				backgroundColor: 'rgba(54, 162, 235, 0.5)',
-				borderColor: 'rgb(54, 162, 235)',
-				borderWidth: 1,
-			}],
+			datasets: [
+				{
+					label: 'TVL in USD',
+					data: tvlData,
+					backgroundColor: 'rgba(54, 162, 235, 0.5)',
+					borderColor: 'rgb(54, 162, 235)',
+					borderWidth: 1,
+					yAxisID: 'tvl',
+				},
+				{
+					label: 'APY',
+					data: apyData,
+					backgroundColor: 'rgba(255, 99, 132, 0.5)',
+					borderColor: 'rgb(255, 99, 132)',
+					borderWidth: 1,
+					yAxisID: 'apy',
+				},
+			],
 		},
 		options: {
-			plugins: {
-				// Disable the legend
-				legend: { display: false },
-
-				// Add a title
-				title: {
-					display: true,
-					text: 'Chain TVLs',
-				},
-				datalabels: {
-					anchor: 'end',
-					align: 'top',
-					color: '#fff',
-					backgroundColor: 'rgba(34, 139, 34, 0.6)',
-					borderColor: 'rgba(34, 139, 34, 1.0)',
-					borderWidth: 1,
-					borderRadius: 5,
-					formatter: (value) => {
-						return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', notation: 'compact' });
-					},
-				},
+			title: {
+				display: true,
+				text: 'Chain TVLs and APYs',
 			},
 			scales: {
-				y: {
-					ticks: {
-						callback: function(value) {
-							return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', notation: 'compact' });
+				yAxes: [
+					{
+						id: 'tvl',
+						type: 'linear',
+						position: 'left',
+						ticks: {
+							callback: function(value) {
+								return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', notation: 'compact' });
+							},
 						},
 					},
-				},
+					{
+						id: 'apy',
+						type: 'linear',
+						position: 'right',
+						gridLines: {
+							drawOnChartArea: false,
+						},
+						ticks: {
+							callback: function(value) {
+								return value + '%';
+							},
+						},
+					},
+				],
 			},
 		},
 	});
@@ -124,7 +144,6 @@ async function getPoolFields(rawPoolsData, limit = 10, ordered = 'ascending', mi
 	const chartURL = await chart.getShortUrl();
 	console.log(chartURL);
 
-	console.log(fields);
 	return [fields, chartURL];
 }
 
@@ -141,10 +160,10 @@ module.exports = {
 			option.setName('order')
 				.setDescription('Sort APY by highest to lowest apy/tvl and vice versa')
 				.addChoices(
-					{ name: 'Highest to lowest APY', value: 'ascendingapy' },
-					{ name: 'Highest to lowest TVL', value: 'ascendingtvl' },
-					{ name: 'Lowest to highest APY', value: 'descendingapy' },
-					{ name: 'Lowest to highest TVL', value: 'descendingtvl' }))
+					{ name: 'Highest to lowest APY', value: 'descendingapy' },
+					{ name: 'Highest to lowest TVL', value: 'descendingtvl' },
+					{ name: 'Lowest to highest APY', value: 'ascendingapy' },
+					{ name: 'Lowest to highest TVL', value: 'ascendingtvl' }))
 		.addStringOption(option =>
 			option.setName('mintvl')
 				.setDescription('Filter out any pools with a lower TVL than the given value'))
