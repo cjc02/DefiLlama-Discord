@@ -1,30 +1,12 @@
 // TODO: Add charts
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { formatTVL } = require('../../utils');
+const { formatTVL, parseTVL } = require('../../utils');
 const QuickChart = require('quickchart-js');
 const axios = require('axios');
 
 // Sort chain data, set limit of chains returned, ascending or descending, and range of TVLs
 // Returns in-line fields for usage in Discord.js
 async function getChainFields(rawChainsData, limit = 10, ordered = 'ascending', minTVL, maxTVL) {
-
-	// Understands values like "1K", "1M", "1B"
-	function parseTVL(str) {
-		const scale = str.slice(-1).toUpperCase();
-		const num = parseFloat(str);
-		switch (scale) {
-		case 'K':
-			return num * 1e3;
-		case 'M':
-			return num * 1e6;
-		case 'B':
-			return num * 1e9;
-		case 'T':
-			return num * 1e12;
-		default:
-			return num;
-		}
-	}
 
 	if (limit > 25 || limit < 1) {
 		return 'cannot return more than 25 chains or less than 1';

@@ -13,9 +13,9 @@ const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
 (async function() {
-	console.log('Syncing data..');
+	// console.log('Syncing data..');
 	// await syncData();
-	console.log('Data synced..');
+	// console.log('Data synced..');
 })();
 
 // Load commands?
@@ -36,8 +36,6 @@ for (const folder of commandFolders) {
 
 // Load client
 client.once(Events.ClientReady, () => {
-
-	// TODO: We want to load all available protocols every time the bot starts.
 	updateKeys();
 	console.log('Ready!');
 });
