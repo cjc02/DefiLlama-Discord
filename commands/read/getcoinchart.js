@@ -115,13 +115,13 @@ module.exports = {
 			option.setName('contractaddress')
 				.setDescription('The contract address of the token')
 				.setRequired(true))
-		.addIntegerOption(option =>
+		.addStringOption(option =>
 			option.setName('start')
 				.setDescription('Unix timestamp of earliest data point requested'))
-		.addIntegerOption(option =>
+		.addStringOption(option =>
 			option.setName('end')
 				.setDescription('Unix timestamp of latest data point requested'))
-		.addIntegerOption(option =>
+		.addStringOption(option =>
 			option.setName('span')
 				.setDescription('Number of data points returned, defaults to estimated value'))
 		.addStringOption(option =>
