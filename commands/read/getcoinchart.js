@@ -63,6 +63,7 @@ async function getCoinChartUrl(coinData) {
 async function getCoinData({ chain, contractaddress, start, end, span, period, searchWidth }) {
 
 	try {
+		// Build paramaters
 		const params = {};
 
 		// Use default 1D for period if not given
@@ -91,11 +92,13 @@ async function getCoinData({ chain, contractaddress, start, end, span, period, s
 			params.end = currentUnixTimestamp;
 		}
 
+		// Request data from DefiLlama
 		const coin = `${chain}:${contractaddress}`;
 		const response = await axios.get(`https://coins.llama.fi/chart/${coin}`, {
 			params: params,
 		});
 
+		// Get price data
 		const coinData = response.data.coins;
 		const tokenData = coinData[coin];
 
@@ -152,6 +155,9 @@ module.exports = {
 		if (start && end) {
 			await interaction.reply('Use either start or end parameter, not both');
 		}
+
+		// Delay response
+		await interaction.deferReply({ ephemeral: true });
 
 		// Get price data
 		const coindata = await getCoinData({ chain: chain, contractaddress: contractaddress, start: start, end: end, span: span, searchWidth: searchWidth, period: period });
