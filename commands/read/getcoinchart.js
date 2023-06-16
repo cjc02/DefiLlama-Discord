@@ -133,11 +133,11 @@ module.exports = {
 	async execute(interaction) {
 		const chain = interaction.options.getString('chain').toLowerCase();
 		const contractaddress = interaction.options.getString('contractaddress');
-		const start = interaction.options.getNumber('start');
-		const end = interaction.options.getNumber('end');
+		const start = interaction.options.getString('start');
+		const end = interaction.options.getString('end');
 		const period = interaction.options.getString('period');
-		const searchWidth = interaction.options.getNumber('searchwidth');
-		const span = interaction.options.getNumber('span');
+		const searchWidth = interaction.options.getString('searchwidth');
+		const span = interaction.options.getString('span');
 
 		// Ensure valid address
 		if (!isAddress(contractaddress)) {
