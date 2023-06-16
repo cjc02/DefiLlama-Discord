@@ -10,7 +10,7 @@ async function getCoinChartUrl(coinData) {
 	// Prepare the data for the chart
 	const timestamps = coinData.prices.map(p => new Date(p.timestamp * 1000).toISOString().slice(0, 10).replace(/-/g, ''));
 	const prices = coinData.prices.map(p => p.price);
-
+	console.log(prices);
 	// Create the chart
 	const chart = new QuickChart();
 	chart.setConfig({
@@ -67,16 +67,20 @@ async function getCoinData({ chain, contractaddress, start, end, span, period, s
 
 		// Use default 1D for period if not given
 		if (!period) {params.period = '1D';}
+		else {
+			params.period = period;
+		}
 
-		// Estimate span if it's not entered
+		// Use default span if it's not entered
 		if (!span) {
 			params.span = 10;
 		}
-
-		if (searchWidth) { params.searchWidth = searchWidth;}
 		else {
-			params.searchWidth = 600;
+			params.span = span;
 		}
+
+		// DefiLlama uses default 10% search width if not given
+		if (searchWidth) { params.searchWidth = searchWidth;}
 
 		if (start) params.start = start;
 		if (end) params.end = end;
@@ -144,18 +148,25 @@ module.exports = {
 			await interaction.reply('Invalid address');
 		}
 
+		// DefiLlama throws error if we supply both
 		if (start && end) {
 			await interaction.reply('Use either start or end parameter, not both');
 		}
 
+		// Get price data
 		const coindata = await getCoinData({ chain: chain, contractaddress: contractaddress, start: start, end: end, span: span, searchWidth: searchWidth, period: period });
-		const chartURL = await getCoinChartUrl(coindata);
+		if (!coindata) { await interaction.reply('request failed');}
 
+		// Build chart & get url
+		const chartURL = await getCoinChartUrl(coindata);
+		if (!chartURL) { await interaction.reply('chart failed to build');}
+
+		// Create embed
 		const embed = new EmbedBuilder()
 			.setColor(0x0099FF)
-			.setTitle(`Chart ${contractaddress.substring(0, 6) + '...' + contractaddress.substring(contractaddress.length - 6)}`);
+			.setTitle(`Chart ${contractaddress.substring(0, 6) + '...' + contractaddress.substring(contractaddress.length - 6)}`)
+			.setImage(chartURL);
 
-		embed.setImage(chartURL);
 		await interaction.reply({ embeds: [embed] });
 	},
 };
