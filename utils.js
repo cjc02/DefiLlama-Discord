@@ -1,3 +1,6 @@
+require('crypto-js');
+const sha3 = require('crypto-js/sha3');
+
 // Converts to US Dollar
 function formatTVL(num, compact = false) {
 	const formatter = Intl.NumberFormat('en-US', {
