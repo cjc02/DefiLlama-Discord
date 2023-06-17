@@ -25,6 +25,7 @@ Get current and or historical APY and TVL of a pool.
 - `pool`: The pool symbol you want APY/TVL on.
 - `includechart`: Include a historical chart of TVL and APY by writing `true` in this argument.
 
+
 ### `/getcoinchart [chain] [contractaddress] (start) (end) (span) (period) (searchwidth)`
 Gets chart of a token. 
 
@@ -35,6 +36,18 @@ Gets chart of a token.
 - `span`: Number of data points returned, defaults to estimated value.
 - `period`: Duration between data points, defaults to 24 hours.
 - `searchwidth`: Time range on either side to find price data, defaults to 10% of period.
+
+### `/getpools (limit) (order) (mintvl) (maxtvl) (minapy) (maxapy) (chain) (includechart)`
+Get a list of pools filtered and ordered by chain, tvl and apy.
+
+- `limit`: The number of pools you want returned (from 1-25). Defaults to 10 if not provided.
+- `order`: Sort pools by highest to lowest APY or TVL and vice versa. Options: 'Highest to lowest APY', 'Highest to lowest TVL', 'Lowest to highest APY', 'Lowest to highest TVL'. Defaults to 'descending' if not provided.
+- `mintvl`: Filter out any pools with a lower TVL than the given value. Value is a string representing the minimum TVL, accepts notation like "1K", "1M", "1B" etc. Defaults to '0' if not provided.
+- `maxtvl`: Filter out any pools with a higher TVL than the given value. Value is a string representing the maximum TVL, accepts the same notation as `mintvl`. Defaults to '100T' if not provided.
+- `minapy`: Filter out any pools with a lower APY than the given value. Value is a number representing the minimum APY. Defaults to 0 if not provided.
+- `maxapy`: Filter out any pools with a higher APY than the given value. Value is a number representing the maximum APY. Defaults to Infinity if not provided.
+- `chain`: Filter pools by chain name. Value is a string representing the chain name.
+- `includechart`: Optional. Include a pie chart visualizing the data. Value is a boolean.
 
 ### `/syncprotocols`
 Retrieve and update all protocols that DefiLlama has for the autocomplete & protocol retrieval functionality.
