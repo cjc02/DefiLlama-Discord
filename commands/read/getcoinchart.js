@@ -10,7 +10,7 @@ async function getCoinChartUrl(coinData) {
 	// Prepare the data for the chart
 	const timestamps = coinData.prices.map(p => new Date(p.timestamp * 1000).toISOString().slice(0, 10).replace(/-/g, ''));
 	const prices = coinData.prices.map(p => p.price);
-	console.log(prices);
+
 	// Create the chart
 	const chart = new QuickChart();
 	chart.setConfig({
@@ -173,6 +173,6 @@ module.exports = {
 			.setTitle(`Chart ${contractaddress.substring(0, 6) + '...' + contractaddress.substring(contractaddress.length - 6)}`)
 			.setImage(chartURL);
 
-		await interaction.reply({ embeds: [embed] });
+		await interaction.editReply({ embeds: [embed] });
 	},
 };

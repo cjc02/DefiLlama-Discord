@@ -19,7 +19,7 @@ function getProtocol(protocolName) {
 		const protocolJSON = JSON.parse(data);
 		let protocolData, protocolParent;
 
-		for (const protocol of protocolJSON.protocols) {
+		for (const protocol of protocolJSON.protocols.protocols) {
 			if (protocol.name === protocolName) {
 				protocolData = protocol;
 				// If there is a protocol parent that exists, we want to return it.
