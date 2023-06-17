@@ -26,10 +26,18 @@ async function buildTVLChart(protocolName) {
 	// TODO: Add pagination or build charts locally and return a base64 encoded string to discord.
 	async function getHistoricalTVL() {
 		try {
+			// Will throw error if there is any spaces
+			protocolName = protocolName.replaceAll(' ', '-');
 			const response = await axios.get(`https://api.llama.fi/protocol/${protocolName}`);
 			const tvlData = response.data['tvl'];
 			const hallmarksData = response.data['hallmarks'];
 			const hallmarks = [];
+
+			// If not found
+			if (response.statusCode == 400) {
+				// throw error
+				console.log(response.body, protocolName);
+			}
 
 			// Convert x/y data to be useable in Chart.js
 			const chartData = tvlData.slice(-244).map(point => {
@@ -139,6 +147,9 @@ module.exports = {
 		const includeChart = interaction.options.getBoolean('includechart');
 		const [protocolData, protocolParent] = getProtocol(protocolName);
 
+		// Delay response
+		await interaction.deferReply({ ephemeral: true });
+
 		// TODO: Add checks to ensure data exists
 		let embed;
 		if (protocolData) {
@@ -156,11 +167,12 @@ module.exports = {
 			if (protocolParent) {embed.setDescription(protocolParent.description);}
 
 			if (includeChart) {
+				// Get chart data
 				const chartUrl = await buildTVLChart(protocolName);
 				console.log(chartUrl);
 				embed.setImage(chartUrl);
 			}
-			await interaction.reply({ embeds: [embed] });
+			await interaction.followUp({ embeds: [embed] });
 		}
 		else {
 			// TODO: error

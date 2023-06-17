@@ -25,6 +25,18 @@ Get current and or historical APY and TVL of a pool.
 - `pool`: The pool symbol you want APY/TVL on.
 - `includechart`: Include a historical chart of TVL and APY by writing `true` in this argument.
 
+
+### `/getcoinchart [chain] [contractaddress] (start) (end) (span) (period) (searchwidth)`
+Gets chart of a token. 
+
+- `chain`: The chain the contract address is located on.
+- `contractaddress`: The contract address of the token.
+- `start`: Unix timestamp of earliest data point requested.
+- `end`: Unix timestamp of latest data point requested.
+- `span`: Number of data points returned, defaults to estimated value.
+- `period`: Duration between data points, defaults to 24 hours.
+- `searchwidth`: Time range on either side to find price data, defaults to 10% of period.
+
 ### `/getpools (limit) (order) (mintvl) (maxtvl) (minapy) (maxapy) (chain) (includechart)`
 Get a list of pools filtered and ordered by chain, tvl and apy.
 
@@ -37,9 +49,11 @@ Get a list of pools filtered and ordered by chain, tvl and apy.
 - `chain`: Filter pools by chain name. Value is a string representing the chain name.
 - `includechart`: Optional. Include a pie chart visualizing the data. Value is a boolean.
 
-
 ### `/syncprotocols`
 Retrieve and update all protocols that DefiLlama has for the autocomplete & protocol retrieval functionality.
+
+### `/checkapi`
+Checks if DefiLlama API is up
 
 ## Features
 

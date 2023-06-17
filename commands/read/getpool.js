@@ -18,9 +18,9 @@ async function getHistoricalData(poolID) {
 
 // Builds chart of TVL & APY based on historical data
 async function buildTVLAPYChart(rawHistoricalData) {
-	const labels = rawHistoricalData.map(item => item.timestamp.split('T')[0]);
-	const tvlData = rawHistoricalData.map(item => item.tvlUsd);
-	const apyData = rawHistoricalData.map(item => item.apy);
+	const labels = rawHistoricalData.map(item => item.timestamp.split('T')[0]).slice(244);
+	const tvlData = rawHistoricalData.map(item => item.tvlUsd).slice(244);
+	const apyData = rawHistoricalData.map(item => item.apy).slice(244);
 
 	const chart = new QuickChart();
 	chart.setConfig({
